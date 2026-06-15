@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: knowledgebase
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/knowledgebase
+    username: knowledge_user
+    password: knowledge_pass
+    driver-class-name: org.postgresql.Driver
+
+    jpa:
+      hibernate:
+        ddl-auto: validate
+      show-sql: true
+
+    flyway:
+      enabled: true
+
+    data:
+      redis:
+        host: localhost
+        port: 6379
+
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: health,metrics
+
+  logging:
+    pattern:
+      console: "%d{yyyy-MM-dd HH:mm:ss} [%X{requestId}] %-5level %logger{36} - %msg%n"
