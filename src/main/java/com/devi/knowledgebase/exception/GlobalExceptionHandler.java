@@ -46,4 +46,14 @@ public class GlobalExceptionHandler {
                         "error", ex.getMessage()
                 ));
     }
+
+    @ExceptionHandler(ArticleNotFoundException.class)
+    public ResponseEntity<String> handleArticleNotFound(ArticleNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(UnauthorizedArticleAccessException.class)
+    public ResponseEntity<String> handleUnauthorizedArticleAccess(UnauthorizedArticleAccessException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
+    }
 }
