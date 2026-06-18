@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -31,9 +32,15 @@ public class ArticleController {
     }
 
     @GetMapping
-    public List<ArticleResponse> getAllArticles() {
-        return articleService.getAllArticles();
+    public List<ArticleResponse> getAllArticles(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction
+    ) {
+        return articleService.getAllArticles(page, size, sortBy, direction);
     }
+
 
     @GetMapping("/{id}")
     public ArticleResponse getArticleById(@PathVariable Long id) {
@@ -56,5 +63,12 @@ public class ArticleController {
             @AuthenticationPrincipal User currentUser
     ) {
         articleService.deleteArticle(id, currentUser);
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<ArticleResponse>> searchArticles(
+            @RequestParam String q
+    ) {
+        return ResponseEntity.ok(articleService.searchArticles(q));
     }
 }
