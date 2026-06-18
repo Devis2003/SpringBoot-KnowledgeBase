@@ -1,6 +1,7 @@
 package com.devi.knowledgebase.dto.article;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 public record ArticleResponse(
         Long id,
@@ -8,6 +9,7 @@ public record ArticleResponse(
         String content,
         Long authorId,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        Set<String> tags
 ) {
 }
