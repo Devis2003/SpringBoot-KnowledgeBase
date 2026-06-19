@@ -67,8 +67,9 @@ public class ArticleController {
 
     @GetMapping("/search")
     public ResponseEntity<List<ArticleResponse>> searchArticles(
-            @RequestParam String q
+            @RequestParam String q,
+            @RequestParam(required = false) List<String> tags
     ) {
-        return ResponseEntity.ok(articleService.searchArticles(q));
+        return ResponseEntity.ok(articleService.searchArticles(q, tags));
     }
 }

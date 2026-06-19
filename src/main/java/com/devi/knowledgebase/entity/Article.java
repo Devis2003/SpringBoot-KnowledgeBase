@@ -40,6 +40,10 @@ public class Article {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private Long viewCount = 0L;
+
     @ManyToMany
     @JoinTable(
             name = "article_tags",

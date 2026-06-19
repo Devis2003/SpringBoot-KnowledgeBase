@@ -30,6 +30,24 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
     )
     List<Article> searchByKeyword(@Param("keyword") String keyword);
 
+    @Query(
+            value = """
+            SELECT DISTINCT a.*
+            FROM articles a
+            JOIN article_tags at ON a.id = at.article_id
+            JOIN tags t ON t.id = at.tag_id
+            WHERE a.deleted_at IS NULL
+            AND a.search_vector @@ plainto_tsquery('english', :keyword)
+            AND LOWER(t.name) IN (:tags)
+            ORDER BY ts_rank(a.search_vector, plainto_tsquery('english', :keyword)) DESC
+            """,
+            nativeQuery = true
+    )
+    List<Article> searchByKeywordAndTags(
+            @Param("keyword") String keyword,
+            @Param("tags") List<String> tags
+    );
+
     @Query("SELECT a FROM Article a")
     List<Article> findAllIncludingDeleted();
 
