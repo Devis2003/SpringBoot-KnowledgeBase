@@ -9,13 +9,15 @@ import com.devi.knowledgebase.exception.ArticleNotFoundException;
 import com.devi.knowledgebase.exception.UnauthorizedArticleAccessException;
 import com.devi.knowledgebase.repository.ArticleRepository;
 import com.devi.knowledgebase.repository.TagRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,10 +29,16 @@ public class ArticleService {
 
     private final ArticleRepository articleRepository;
     private final TagRepository tagRepository;
+    private final MeterRegistry meterRegistry;
 
-    public ArticleService(ArticleRepository articleRepository, TagRepository tagRepository) {
+    public ArticleService(
+            ArticleRepository articleRepository,
+            TagRepository tagRepository,
+            MeterRegistry meterRegistry
+    ) {
         this.articleRepository = articleRepository;
         this.tagRepository = tagRepository;
+        this.meterRegistry = meterRegistry;
     }
 
     private ArticleResponse toResponse(Article article) {
@@ -46,6 +54,7 @@ public class ArticleService {
                 article.getAuthor().getId(),
                 article.getCreatedAt(),
                 article.getUpdatedAt(),
+                article.getViewCount(),
                 tagNames
         );
     }
@@ -68,9 +77,11 @@ public class ArticleService {
                 .collect(Collectors.toSet());
     }
 
-    @CacheEvict(value = "articles", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "articles", allEntries = true),
+            @CacheEvict(value = "articleSearch", allEntries = true)
+    })
     public ArticleResponse createArticle(ArticleRequest request, User author) {
-
         Article article = Article.builder()
                 .title(request.title())
                 .content(request.content())
@@ -102,29 +113,58 @@ public class ArticleService {
                 .toList();
     }
 
-    public List<ArticleResponse> searchArticles(String keyword) {
-        return articleRepository.searchByKeyword(keyword)
-                .stream()
-                .map(this::toResponse)
-                .toList();
-    }
+    @Cacheable(
+            value = "articleSearch",
+            key = "#keyword + '-' + (#tags == null ? '' : #tags.toString())"
+    )
+    public List<ArticleResponse> searchArticles(String keyword, List<String> tags) {
+        return Timer.builder("article.search")
+                .description("Time taken to search articles")
+                .publishPercentileHistogram()
+                .register(meterRegistry)
+                .record(() -> {
+                    List<Article> articles;
 
-    @Cacheable(value = "article", key = "#id")
-    public ArticleResponse getArticleById(Long id) {
+                    if (tags == null || tags.isEmpty()) {
+                        articles = articleRepository.searchByKeyword(keyword);
+                    } else {
+                        List<String> normalizedTags = tags.stream()
+                                .map(String::trim)
+                                .map(String::toLowerCase)
+                                .filter(tag -> !tag.isBlank())
+                                .toList();
 
-        Article article = articleRepository
-                .findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new ArticleNotFoundException("Article not found"));
+                        articles = articleRepository.searchByKeywordAndTags(keyword, normalizedTags);
+                    }
 
-        return toResponse(article);
+                    return articles.stream()
+                            .map(this::toResponse)
+                            .toList();
+                });
     }
 
     @Caching(evict = {
             @CacheEvict(value = "article", key = "#id"),
             @CacheEvict(value = "articles", allEntries = true)
     })
-    public ArticleResponse updateArticle(Long id, ArticleRequest request, User currentUser) {
+    public ArticleResponse getArticleById(Long id) {
 
+        Article article = articleRepository
+                .findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new ArticleNotFoundException("Article not found"));
+
+        article.setViewCount(article.getViewCount() + 1);
+        Article updatedArticle = articleRepository.save(article);
+
+        return toResponse(updatedArticle);
+    }
+
+    @Caching(evict = {
+            @CacheEvict(value = "article", key = "#id"),
+            @CacheEvict(value = "articles", allEntries = true),
+            @CacheEvict(value = "articleSearch", allEntries = true)
+    })
+    public ArticleResponse updateArticle(Long id, ArticleRequest request, User currentUser) {
         Article article = articleRepository
                 .findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ArticleNotFoundException("Article not found"));
@@ -145,16 +185,21 @@ public class ArticleService {
 
     @Caching(evict = {
             @CacheEvict(value = "article", key = "#id"),
-            @CacheEvict(value = "articles", allEntries = true)
+            @CacheEvict(value = "articles", allEntries = true),
+            @CacheEvict(value = "articleSearch", allEntries = true)
     })
     public void deleteArticle(Long id, User currentUser) {
-
         Article article = articleRepository
                 .findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ArticleNotFoundException("Article not found"));
 
-        if (!article.getAuthor().getId().equals(currentUser.getId())) {
-            throw new UnauthorizedArticleAccessException("You are not allowed to access this article");
+        boolean isOwner = article.getAuthor().getId().equals(currentUser.getId());
+        boolean isAdmin = "ADMIN".equals(currentUser.getRole());
+
+        if (!isOwner && !isAdmin) {
+            throw new UnauthorizedArticleAccessException(
+                    "You are not allowed to delete this article"
+            );
         }
 
         article.setDeletedAt(LocalDateTime.now());

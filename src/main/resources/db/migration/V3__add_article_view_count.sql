@@ -1,0 +1,2 @@
+ALTER TABLE articles
+    ADD COLUMN view_count BIGINT NOT NULL DEFAULT 0;

@@ -11,6 +11,7 @@ public record ArticleResponse(
         Long authorId,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
+        Long viewCount,
         Set<String> tags
 ) implements Serializable {
 }
