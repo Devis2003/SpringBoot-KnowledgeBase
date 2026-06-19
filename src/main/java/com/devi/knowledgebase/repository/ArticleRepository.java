@@ -18,14 +18,16 @@ public interface ArticleRepository extends JpaRepository<Article, Long> {
 
     Optional<Article> findByIdAndDeletedAtIsNull(Long id);
 
-    @Query("""
-        SELECT a FROM Article a
-        WHERE a.deletedAt IS NULL
-        AND (
-            LOWER(a.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
-            OR LOWER(a.content) LIKE LOWER(CONCAT('%', :keyword, '%'))
-        )
-        """)
+    @Query(
+            value = """
+                SELECT *
+                FROM articles
+                WHERE deleted_at IS NULL
+                AND search_vector @@ plainto_tsquery('english', :keyword)
+                ORDER BY ts_rank(search_vector, plainto_tsquery('english', :keyword)) DESC
+                """,
+            nativeQuery = true
+    )
     List<Article> searchByKeyword(@Param("keyword") String keyword);
 
     @Query("SELECT a FROM Article a")
