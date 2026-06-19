@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -65,6 +68,7 @@ public class ArticleService {
                 .collect(Collectors.toSet());
     }
 
+    @CacheEvict(value = "articles", allEntries = true)
     public ArticleResponse createArticle(ArticleRequest request, User author) {
 
         Article article = Article.builder()
@@ -81,6 +85,10 @@ public class ArticleService {
         return toResponse(savedArticle);
     }
 
+    @Cacheable(
+            value = "articles",
+            key = "#page + '-' + #size + '-' + #sortBy + '-' + #direction"
+    )
     public List<ArticleResponse> getAllArticles(int page, int size, String sortBy, String direction) {
         Sort sort = direction.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
@@ -101,6 +109,7 @@ public class ArticleService {
                 .toList();
     }
 
+    @Cacheable(value = "article", key = "#id")
     public ArticleResponse getArticleById(Long id) {
 
         Article article = articleRepository
@@ -110,6 +119,10 @@ public class ArticleService {
         return toResponse(article);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "article", key = "#id"),
+            @CacheEvict(value = "articles", allEntries = true)
+    })
     public ArticleResponse updateArticle(Long id, ArticleRequest request, User currentUser) {
 
         Article article = articleRepository
@@ -130,6 +143,10 @@ public class ArticleService {
         return toResponse(updatedArticle);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "article", key = "#id"),
+            @CacheEvict(value = "articles", allEntries = true)
+    })
     public void deleteArticle(Long id, User currentUser) {
 
         Article article = articleRepository
