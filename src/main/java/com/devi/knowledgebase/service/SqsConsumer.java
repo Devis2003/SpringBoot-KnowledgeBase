@@ -108,7 +108,7 @@ public class SqsConsumer {
         }
 
         String plainText = content
-                .replaceAll("#", "")
+                .replace("#", "")
                 .replaceAll("!\\[[^]]*]\\([^)]*\\)", "")
                 .replaceAll("\\[[^]]*]\\([^)]*\\)", "")
                 .replaceAll("\\s+", " ")
