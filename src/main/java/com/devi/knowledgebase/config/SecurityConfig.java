@@ -37,10 +37,12 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/articles/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/articles/images/presigned-url").authenticated()
 
                         .requestMatchers(HttpMethod.POST, "/articles/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/articles/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/articles/**").authenticated()
+
 
                         .anyRequest().authenticated()
                 )

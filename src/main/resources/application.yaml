@@ -39,3 +39,9 @@ logging:
 jwt:
   secret: Yh1jpIUnVjXCHSfdJ/LdUijGO5bKk3hdoP9eRupdmjXQlP453m11UCzCEB/cajFQyx6kqEc8xjXbl/yN0RnS8A
   expiration-ms: 3600000
+
+aws:
+  s3:
+    bucket-name: knowledgebase-dev-bucket-224300919244-ap-south-1-an
+    region: ap-south-1
+    presigned-url-expiration-minutes: 10
