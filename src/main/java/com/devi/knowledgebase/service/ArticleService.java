@@ -2,6 +2,7 @@ package com.devi.knowledgebase.service;
 
 import com.devi.knowledgebase.dto.article.ArticleRequest;
 import com.devi.knowledgebase.dto.article.ArticleResponse;
+import com.devi.knowledgebase.dto.event.ArticleEvent;
 import com.devi.knowledgebase.entity.Article;
 import com.devi.knowledgebase.entity.Tag;
 import com.devi.knowledgebase.entity.User;
@@ -9,6 +10,8 @@ import com.devi.knowledgebase.exception.ArticleNotFoundException;
 import com.devi.knowledgebase.exception.UnauthorizedArticleAccessException;
 import com.devi.knowledgebase.repository.ArticleRepository;
 import com.devi.knowledgebase.repository.TagRepository;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -16,8 +19,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,15 +31,18 @@ public class ArticleService {
     private final ArticleRepository articleRepository;
     private final TagRepository tagRepository;
     private final MeterRegistry meterRegistry;
+    private final SqsPublisher sqsPublisher;
 
     public ArticleService(
             ArticleRepository articleRepository,
             TagRepository tagRepository,
-            MeterRegistry meterRegistry
+            MeterRegistry meterRegistry,
+            SqsPublisher sqsPublisher
     ) {
         this.articleRepository = articleRepository;
         this.tagRepository = tagRepository;
         this.meterRegistry = meterRegistry;
+        this.sqsPublisher = sqsPublisher;
     }
 
     private ArticleResponse toResponse(Article article) {
@@ -92,6 +96,14 @@ public class ArticleService {
                 .build();
 
         Article savedArticle = articleRepository.save(article);
+
+        sqsPublisher.publishArticleEvent(
+                new ArticleEvent(
+                        "ARTICLE_CREATED",
+                        savedArticle.getId(),
+                        savedArticle.getTitle()
+                )
+        );
 
         return toResponse(savedArticle);
     }
@@ -148,15 +160,19 @@ public class ArticleService {
             @CacheEvict(value = "articles", allEntries = true)
     })
     public ArticleResponse getArticleById(Long id) {
-
         Article article = articleRepository
                 .findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ArticleNotFoundException("Article not found"));
 
-        article.setViewCount(article.getViewCount() + 1);
-        Article updatedArticle = articleRepository.save(article);
+        sqsPublisher.publishArticleEvent(
+                new ArticleEvent(
+                        "ARTICLE_VIEWED",
+                        article.getId(),
+                        article.getTitle()
+                )
+        );
 
-        return toResponse(updatedArticle);
+        return toResponse(article);
     }
 
     @Caching(evict = {
@@ -179,6 +195,14 @@ public class ArticleService {
         article.setUpdatedAt(LocalDateTime.now());
 
         Article updatedArticle = articleRepository.save(article);
+
+        sqsPublisher.publishArticleEvent(
+                new ArticleEvent(
+                        "ARTICLE_UPDATED",
+                        updatedArticle.getId(),
+                        updatedArticle.getTitle()
+                )
+        );
 
         return toResponse(updatedArticle);
     }

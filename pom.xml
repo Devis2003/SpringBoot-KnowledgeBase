@@ -163,6 +163,11 @@
 			<artifactId>s3</artifactId>
 			<version>2.30.31</version>
 		</dependency>
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>sqs</artifactId>
+			<version>2.30.31</version>
+		</dependency>
 
 	</dependencies>
 

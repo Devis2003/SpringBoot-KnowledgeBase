@@ -45,3 +45,7 @@ aws:
     bucket-name: knowledgebase-dev-bucket-224300919244-ap-south-1-an
     region: ap-south-1
     presigned-url-expiration-minutes: 10
+
+  sqs:
+    queue-url: https://sqs.ap-south-1.amazonaws.com/224300919244/knowledgebase-article-events
+    region: ap-south-1
