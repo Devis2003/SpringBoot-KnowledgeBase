@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://knowledgebase-postgres.c504o6246cjh.ap-south-1.rds.amazonaws.com:5432/knowledgebase
+    username: knowledge_user
+    password: knowledge_pass
+    driver-class-name: org.postgresql.Driver
+
+  data:
+    redis:
+      host: knowledgebase-redis-afdew7.serverless.aps1.cache.amazonaws.com
+      port: 6379
+      ssl:
+        enabled: true
+
+aws:
+  s3:
+    bucket-name: knowledgebase-dev-bucket-224300919244-ap-south-1-an
+    region: ap-south-1
+    presigned-url-expiration-minutes: 10
+
+  sqs:
+    queue-url: https://sqs.ap-south-1.amazonaws.com/224300919244/knowledgebase-article-events
+    region: ap-south-1
