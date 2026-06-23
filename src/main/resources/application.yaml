@@ -37,7 +37,7 @@ logging:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%X{requestId}] %-5level %logger{36} - %msg%n"
 
 jwt:
-  secret: Yh1jpIUnVjXCHSfdJ/LdUijGO5bKk3hdoP9eRupdmjXQlP453m11UCzCEB/cajFQyx6kqEc8xjXbl/yN0RnS8A
+  secret: ${JWT_SECRET}
   expiration-ms: 3600000
 
 aws:
