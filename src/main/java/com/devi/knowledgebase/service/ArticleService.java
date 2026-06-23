@@ -13,7 +13,7 @@ import com.devi.knowledgebase.repository.TagRepository;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
+//import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -108,10 +108,10 @@ public class ArticleService {
         return toResponse(savedArticle);
     }
 
-    @Cacheable(
-            value = "articles",
-            key = "#page + '-' + #size + '-' + #sortBy + '-' + #direction"
-    )
+//    @Cacheable(
+//            value = "articles",
+//            key = "#page + '-' + #size + '-' + #sortBy + '-' + #direction"
+//    )
     public List<ArticleResponse> getAllArticles(int page, int size, String sortBy, String direction) {
         Sort sort = direction.equalsIgnoreCase("desc")
                 ? Sort.by(sortBy).descending()
@@ -125,10 +125,10 @@ public class ArticleService {
                 .toList();
     }
 
-    @Cacheable(
-            value = "articleSearch",
-            key = "#keyword + '-' + (#tags == null ? '' : #tags.toString())"
-    )
+//    @Cacheable(
+//            value = "articleSearch",
+//            key = "#keyword + '-' + (#tags == null ? '' : #tags.toString())"
+//    )
     public List<ArticleResponse> searchArticles(String keyword, List<String> tags) {
         return Timer.builder("article.search")
                 .description("Time taken to search articles")
