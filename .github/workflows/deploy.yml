@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - feat/github-actions
+      - feat/project-setup
 
 jobs:
   deploy:
@@ -19,7 +19,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ~/SpringBoot-KnowledgeBase
-            git pull origin feat/sqs-events
+            git pull origin feat/project-setup
             ./mvnw clean package -DskipTests
             sudo systemctl restart knowledgebase
             sleep 40
