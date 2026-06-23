@@ -22,5 +22,5 @@ jobs:
             git pull origin feat/sqs-events
             ./mvnw clean package -DskipTests
             sudo systemctl restart knowledgebase
-            sleep 25
+            sleep 40
             curl -f http://localhost:8080/actuator/health
