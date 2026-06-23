@@ -42,7 +42,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/articles/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/articles/images/presigned-url").authenticated()
 
