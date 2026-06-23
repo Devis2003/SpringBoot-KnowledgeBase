@@ -24,7 +24,7 @@ jobs:
 
             PID=$(pgrep -f "knowledgebase-0.0.1-SNAPSHOT.jar" || true)
             if [ -n "$PID" ]; then
-              kill $PID
+              kill -9 $PID || true
               sleep 5
             fi
 
