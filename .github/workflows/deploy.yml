@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - feat/sqs-events
+      - feat/github-actions
 
 jobs:
   deploy:
